@@ -42,19 +42,50 @@ router.get('/getTasks', auth, async (req, res) => {
 
     }
 
-})
+});
 
 //Get specific task by task Id
-router.get('/:id',auth, async (req,res) => {
+router.get('/:id', auth, async (req, res) => {
     const taskId = req.params.id;
     const task = await Task.findOne({
-        _id:taskId,
-        owner:req.user._id
+        _id: taskId,
+        owner: req.user._id
     })
-    if(!task){
-       return res.status(404).json({message:"Task Not Found"})
+    if (!task) {
+        return res.status(404).json({ message: "Task Not Found" })
     }
-    res.status(200).json({task,message:"Task fetched successfully!!"})
+    res.status(200).json({ task, message: "Task fetched successfully!!" })
+});
+//Update a task
+router.patch('/:id', auth, async (req, res) => {
+    const taskId = req.params.id;
+    const updates = Object.keys(req.body);
+    const allowedUpdate = ['taskName', 'description', 'completed'];
+    isValidOperation = updates.every(update => allowedUpdate.includes(update));
+    if (!isValidOperation) {
+        return res.status(404).json({ error: "Invalid Updates" });
+    }
+    try {
+        const task = await Task.findOne({
+            _id: taskId,
+            owner: req.user._id
+        })
+        if (!task) {
+            return res.status(404).json({ message: "Task Not Found" })
+        }
+        updates.forEach(update => task[update]=req.body[update]);
+        await task.save();
+        res.json({
+            message:"Task Update Successfully"
+        })
+
+    } catch (error) {
+        res.json({
+            message:"Invalid"
+        })
+
+    }
+
 })
 
 module.exports = router;
